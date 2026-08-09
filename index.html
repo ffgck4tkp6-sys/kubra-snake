@@ -8,20 +8,20 @@
   <style>
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: radial-gradient(circle at top, #183f2b 0%, #07120d 48%, #030805 100%); color: #f1fff4; font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif; }
-    main { width: min(94vw, 760px); padding: 24px 0 30px; }
-    header { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin: 0 4px 14px; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #323232; color: #fff; font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif; }
+    main { width: min(100vw, 800px); padding: 0; }
+    header { display: none; }
     h1 { margin: 0; font-size: clamp(1.7rem, 6vw, 2.8rem); letter-spacing: -0.06em; }
     #score { font-size: 1.05rem; font-weight: 800; color: #a9ffbd; white-space: nowrap; }
-    .game { position: relative; border: 3px solid #83eaa0; border-radius: 16px; overflow: hidden; box-shadow: 0 18px 60px #000a, inset 0 0 35px #46c96a18; background: #0b2116; }
+    .game { position: relative; overflow: hidden; background: #323232; }
     canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
-    #overlay { position: absolute; inset: 0; display: grid; place-content: center; gap: 10px; text-align: center; background: #031008c9; opacity: 0; pointer-events: none; transition: opacity .15s ease; }
+    #overlay { position: absolute; inset: 0; display: grid; place-content: center; gap: 10px; text-align: center; background: #323232dd; opacity: 0; pointer-events: none; transition: opacity .15s ease; }
     #overlay.show { opacity: 1; pointer-events: auto; }
-    #overlay strong { font-size: clamp(2rem, 8vw, 4rem); color: #ff8e8e; letter-spacing: -0.07em; }
-    #overlay span { color: #e8ffe9; }
-    button { font: inherit; font-weight: 800; color: #06200e; background: #9effb7; border: 0; border-radius: 999px; padding: .72em 1.2em; cursor: pointer; box-shadow: 0 4px 0 #43a45e; }
-    button:active { transform: translateY(3px); box-shadow: 0 1px 0 #43a45e; }
-    .help { margin: 12px 4px 0; color: #b4cfba; text-align: center; font-size: .95rem; }
+    #overlay strong { font-size: clamp(2rem, 8vw, 4rem); color: #fff; letter-spacing: -0.07em; }
+    #overlay span { color: #fff; }
+    button { font: inherit; font-weight: 800; color: #fff; background: #323232; border: 1px solid #fff; border-radius: 0; padding: .72em 1.2em; cursor: pointer; }
+    button:active { transform: translateY(1px); }
+    .help { margin: 12px 4px 0; color: #fff; text-align: center; font-size: .95rem; }
     .controls { display: grid; grid-template-columns: repeat(3, 62px); grid-template-rows: repeat(2, 54px); justify-content: center; gap: 7px; margin: 22px auto 0; }
     .controls button { padding: 0; border-radius: 13px; font-size: 1.4rem; }
     .controls .up { grid-column: 2; }
@@ -33,10 +33,9 @@
 </head>
 <body>
   <main>
-    <header><h1>Kubra Snake</h1><div id="score">Skor: 0</div></header>
     <section class="game" aria-label="Snake oyunu">
       <canvas id="game" width="800" height="600" aria-label="Yılan oyunu"></canvas>
-      <div id="overlay" role="status" aria-live="polite"><strong>Game Over</strong><span id="final-score"></span><button id="restart">Tekrar oyna</button></div>
+      <div id="overlay" role="status" aria-live="polite"><strong>Game Over</strong><button id="restart">Tekrar oyna</button></div>
     </section>
     <p class="help">Ok tuşları veya WASD ile oyna. Yılan doğrudan ters yöne dönemez.</p>
     <div class="controls" aria-label="Dokunmatik kontroller">
@@ -49,11 +48,9 @@
   <script>
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
-    const scoreEl = document.getElementById('score');
     const overlay = document.getElementById('overlay');
-    const finalScore = document.getElementById('final-score');
     const size = 20, cols = canvas.width / size, rows = canvas.height / size;
-    let snake, direction, queuedDirection, food, score, timer, gameOver;
+    let snake, direction, queuedDirection, food, speed, timer, gameOver, wallHitStarted;
 
     function randomFood() {
       let candidate;
@@ -62,12 +59,12 @@
       return candidate;
     }
     function reset() {
-      snake = [{ x: 12, y: 15 }, { x: 11, y: 15 }, { x: 10, y: 15 }];
+      snake = [{ x: 76, y: 56 }, { x: 75, y: 56 }, { x: 74, y: 56 }];
       direction = { x: 1, y: 0 };
       queuedDirection = direction;
-      food = randomFood(); score = 0; gameOver = false;
-      scoreEl.textContent = 'Skor: 0'; overlay.classList.remove('show');
-      clearInterval(timer); timer = setInterval(step, 112); draw();
+      food = { x: 40, y: 40 }; speed = 100; gameOver = false; wallHitStarted = 0;
+      overlay.classList.remove('show');
+      clearInterval(timer); timer = setInterval(step, speed); draw();
     }
     function sameDirection(a, b) { return a.x === b.x && a.y === b.y; }
     function chooseDirection(next) {
@@ -79,25 +76,26 @@
       const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
       const hitWall = head.x < 0 || head.x >= cols || head.y < 0 || head.y >= rows;
       const hitSelf = snake.slice(0, -1).some(part => part.x === head.x && part.y === head.y);
-      if (hitWall || hitSelf) { endGame(); return; }
+      if (hitWall) {
+        if (!wallHitStarted) wallHitStarted = Date.now();
+        else if (Date.now() - wallHitStarted >= 200) endGame();
+        return;
+      }
+      wallHitStarted = 0;
+      if (hitSelf) { endGame(); return; }
       snake.unshift(head);
       if (head.x === food.x && head.y === food.y) {
-        score++; scoreEl.textContent = `Skor: ${score}`; food = randomFood();
-        clearInterval(timer); timer = setInterval(step, Math.max(55, 112 - score * 3));
+        food = randomFood();
+        if (speed > 25) speed -= 10;
+        clearInterval(timer); timer = setInterval(step, speed);
       } else snake.pop();
       draw();
     }
-    function endGame() { gameOver = true; clearInterval(timer); finalScore.textContent = `Skorun: ${score}`; overlay.classList.add('show'); draw(); }
+    function endGame() { gameOver = true; clearInterval(timer); overlay.classList.add('show'); draw(); }
     function draw() {
-      ctx.fillStyle = '#0b2116'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.strokeStyle = '#ffffff0c'; ctx.lineWidth = 1;
-      for (let x = 0; x <= canvas.width; x += size) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
-      for (let y = 0; y <= canvas.height; y += size) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
-      ctx.fillStyle = '#ff6363'; ctx.beginPath(); ctx.arc((food.x + .5) * size, (food.y + .5) * size, size * .34, 0, Math.PI * 2); ctx.fill();
-      snake.forEach((part, index) => { ctx.fillStyle = index === 0 ? '#b6ff5c' : '#4ade80'; ctx.fillRect(part.x * size + 2, part.y * size + 2, size - 4, size - 4); });
-      const head = snake[0]; ctx.fillStyle = '#08230e';
-      if (direction.x) { const eyeX = (head.x + .5 + direction.x * .19) * size; ctx.fillRect(eyeX, (head.y + .25) * size, 3, 3); ctx.fillRect(eyeX, (head.y + .63) * size, 3, 3); }
-      else { const eyeY = (head.y + .5 + direction.y * .19) * size; ctx.fillRect((head.x + .25) * size, eyeY, 3, 3); ctx.fillRect((head.x + .63) * size, eyeY, 3, 3); }
+      ctx.fillStyle = '#323232'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#ff0000'; ctx.fillRect(food.x * size, food.y * size, size, size);
+      snake.forEach((part, index) => { ctx.fillStyle = index === 0 ? '#00ff00' : '#ffffff'; ctx.fillRect(part.x * size, part.y * size, size, size); });
     }
     const keys = { ArrowUp: {x:0,y:-1}, w:{x:0,y:-1}, ArrowDown:{x:0,y:1}, s:{x:0,y:1}, ArrowLeft:{x:-1,y:0}, a:{x:-1,y:0}, ArrowRight:{x:1,y:0}, d:{x:1,y:0} };
     addEventListener('keydown', event => { const next = keys[event.key]; if (next) { event.preventDefault(); chooseDirection(next); } });
