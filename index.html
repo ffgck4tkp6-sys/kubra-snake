@@ -7,19 +7,19 @@
 <style>
 html,body{margin:0;min-height:100%;background:#323232}
 body{display:grid;place-items:center;padding:12px;box-sizing:border-box}
-.game{position:relative;width:min(640px,calc(100vw - 24px));aspect-ratio:4/3;box-sizing:border-box;border:3px solid #fff;overflow:hidden;display:grid;place-items:center}
+.game{position:relative;width:min(640px,calc(100vw - 24px));aspect-ratio:4/3;box-sizing:border-box;border:3px solid #fff;overflow:visible;display:grid;place-items:center}
 .game canvas{display:block;width:400px;height:300px;image-rendering:pixelated;background:#323232}
-.controls{display:none;position:absolute;bottom:10px;left:50%;transform:translateX(-50%);grid-template-columns:48px 48px 48px;grid-template-rows:48px 48px;gap:6px;z-index:2}
-.controls button{border:2px solid #fff;background:#555;color:#fff;font-size:24px;font-weight:bold;border-radius:8px;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.controls{display:grid;position:absolute;top:calc(100% + 14px);left:50%;transform:translateX(-50%);grid-template-columns:52px 52px 52px;grid-template-rows:52px 52px;gap:7px;z-index:5}
+.controls button{width:52px;height:52px;border:2px solid #fff;background:#555;color:#fff;font-size:25px;font-weight:bold;border-radius:9px;touch-action:manipulation;-webkit-user-select:none;user-select:none;display:flex;align-items:center;justify-content:center}
 .controls .up{grid-column:2}.controls .left{grid-column:1;grid-row:2}.controls .down{grid-column:2;grid-row:2}.controls .right{grid-column:3;grid-row:2}
-@media (max-width:700px){.controls{display:grid}}
+@media (min-width:701px){.controls{display:none}}
 </style>
 </head>
 <body>
 <div class="game">
 <canvas id="game" width="400" height="300"></canvas>
 <div class="controls" aria-label="Yön tuşları">
-<button class="up" data-dir="up">↑</button><button class="left" data-dir="left">←</button><button class="down" data-dir="down">↓</button><button class="right" data-dir="right">→</button>
+<button type="button" class="up" data-dir="up">↑</button><button type="button" class="left" data-dir="left">←</button><button type="button" class="down" data-dir="down">↓</button><button type="button" class="right" data-dir="right">→</button>
 </div>
 </div>
 <script>
@@ -36,7 +36,7 @@ function setDirection(d){if(gameOver)return;if(direction&&d.x===-direction.x&&d.
 const dirs={up:{x:0,y:-1},down:{x:0,y:1},left:{x:-1,y:0},right:{x:1,y:0}};
 const keys={ArrowUp:dirs.up,ArrowDown:dirs.down,ArrowLeft:dirs.left,ArrowRight:dirs.right,w:dirs.up,s:dirs.down,a:dirs.left,d:dirs.right};
 window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='r'&&gameOver){reset();return}if(keys[e.key]){e.preventDefault();setDirection(keys[e.key])}});
-document.querySelectorAll('.controls button').forEach(b=>{const go=()=>setDirection(dirs[b.dataset.dir]);b.addEventListener('pointerdown',e=>{e.preventDefault();go()});});
+document.querySelectorAll('.controls button').forEach(b=>{const go=()=>setDirection(dirs[b.dataset.dir]);b.addEventListener('pointerdown',e=>{e.preventDefault();go()});b.addEventListener('touchstart',e=>{e.preventDefault();go()},{passive:false});});
 reset();
 })();
 </script>
