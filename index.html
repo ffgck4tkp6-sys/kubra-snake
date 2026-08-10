@@ -9,10 +9,19 @@ html,body{margin:0;min-height:100%;background:#323232}
 body{display:grid;place-items:center;padding:12px;box-sizing:border-box}
 .game{position:relative;width:min(640px,calc(100vw - 24px));aspect-ratio:4/3;box-sizing:border-box;border:3px solid #fff;overflow:hidden;display:grid;place-items:center}
 .game canvas{display:block;width:400px;height:300px;image-rendering:pixelated;background:#323232}
+.controls{display:none;position:absolute;bottom:10px;left:50%;transform:translateX(-50%);grid-template-columns:48px 48px 48px;grid-template-rows:48px 48px;gap:6px;z-index:2}
+.controls button{border:2px solid #fff;background:#555;color:#fff;font-size:24px;font-weight:bold;border-radius:8px;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.controls .up{grid-column:2}.controls .left{grid-column:1;grid-row:2}.controls .down{grid-column:2;grid-row:2}.controls .right{grid-column:3;grid-row:2}
+@media (max-width:700px){.controls{display:grid}}
 </style>
 </head>
 <body>
-<div class="game"><canvas id="game" width="400" height="300"></canvas></div>
+<div class="game">
+<canvas id="game" width="400" height="300"></canvas>
+<div class="controls" aria-label="Yön tuşları">
+<button class="up" data-dir="up">↑</button><button class="left" data-dir="left">←</button><button class="down" data-dir="down">↓</button><button class="right" data-dir="right">→</button>
+</div>
+</div>
 <script>
 (function(){
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
@@ -24,8 +33,11 @@ function newFood(){let f;do{f={x:Math.floor(Math.random()*cols),y:Math.floor(Mat
 function endGame(){gameOver=true;if(timer)clearInterval(timer);timer=null;draw()}
 function step(){if(gameOver||!direction)return;if(nextDirection&&!(nextDirection.x===-direction.x&&nextDirection.y===-direction.y))direction=nextDirection;nextDirection=null;const head={x:snake[0].x+direction.x,y:snake[0].y+direction.y};if(head.x<0||head.x>=cols||head.y<0||head.y>=rows||snake.some(p=>p.x===head.x&&p.y===head.y)){endGame();return}snake.unshift(head);if(head.x===food.x&&head.y===food.y)food=newFood();else snake.pop();draw()}
 function setDirection(d){if(gameOver)return;if(direction&&d.x===-direction.x&&d.y===-direction.y)return;nextDirection=d;if(direction===null){direction=d;timer=setInterval(step,speed)}}
-const keys={ArrowUp:{x:0,y:-1},ArrowDown:{x:0,y:1},ArrowLeft:{x:-1,y:0},ArrowRight:{x:1,y:0},w:{x:0,y:-1},s:{x:0,y:1},a:{x:-1,y:0},d:{x:1,y:0}};
-window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='r'&&gameOver){reset();return}if(keys[e.key]){e.preventDefault();setDirection(keys[e.key])}});reset();
+const dirs={up:{x:0,y:-1},down:{x:0,y:1},left:{x:-1,y:0},right:{x:1,y:0}};
+const keys={ArrowUp:dirs.up,ArrowDown:dirs.down,ArrowLeft:dirs.left,ArrowRight:dirs.right,w:dirs.up,s:dirs.down,a:dirs.left,d:dirs.right};
+window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='r'&&gameOver){reset();return}if(keys[e.key]){e.preventDefault();setDirection(keys[e.key])}});
+document.querySelectorAll('.controls button').forEach(b=>{const go=()=>setDirection(dirs[b.dataset.dir]);b.addEventListener('pointerdown',e=>{e.preventDefault();go()});});
+reset();
 })();
 </script>
 </body>
