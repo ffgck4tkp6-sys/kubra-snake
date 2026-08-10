@@ -16,9 +16,9 @@ body{display:grid;place-items:center;padding:12px;box-sizing:border-box}
 <script>
 (function(){
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
-const cell=5,cols=80,rows=60,speed=100;
+const cell=3,cols=133,rows=100,speed=100;
 let snake,direction,nextDirection,food,timer,gameOver;
-function reset(){if(timer)clearInterval(timer);snake=[{x:39,y:29},{x:38,y:29},{x:37,y:29}];direction=null;nextDirection=null;food={x:20,y:20};timer=null;gameOver=false;draw()}
+function reset(){if(timer)clearInterval(timer);snake=[{x:66,y:49},{x:65,y:49},{x:64,y:49}];direction=null;nextDirection=null;food={x:33,y:33};timer=null;gameOver=false;draw()}
 function draw(){ctx.fillStyle='#323232';ctx.fillRect(0,0,400,300);ctx.fillStyle='#ff0000';ctx.fillRect(food.x*cell,food.y*cell,cell,cell);for(let i=snake.length-1;i>=0;i--){ctx.fillStyle=i===0?'#00ff00':'#fff';ctx.fillRect(snake[i].x*cell,snake[i].y*cell,cell,cell)}if(gameOver){ctx.fillStyle='rgba(0,0,0,0.65)';ctx.fillRect(0,0,400,300);ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='bold 30px Arial';ctx.fillText('GAME OVER',200,140);ctx.font='16px Arial';ctx.fillText('Tekrar oyna: R',200,170)}}
 function newFood(){let f;do{f={x:Math.floor(Math.random()*cols),y:Math.floor(Math.random()*rows)}}while(snake.some(p=>p.x===f.x&&p.y===f.y));return f}
 function endGame(){gameOver=true;if(timer)clearInterval(timer);timer=null;draw()}
